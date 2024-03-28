@@ -6,7 +6,7 @@ from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from email_validator import validate_email, EmailNotValidError
 
-from helpers import apology, login_required, lookup, validate_password
+from helpers import apology, login_required, validate_password
 
 # Configure application
 app = Flask(__name__)
@@ -125,3 +125,13 @@ def login():
 
     # User reached route via GET (as by clicking a link or via redirect)
     return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    """Log user out"""
+
+    # Forget any user_id
+    session.clear()
+
+    # Redirect user to login form
+    return redirect("/")
