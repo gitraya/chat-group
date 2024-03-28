@@ -1,7 +1,7 @@
 import os
 import sqlite3
 
-from flask import Flask, flash, redirect, render_template, request, session
+from flask import Flask, flash, redirect, render_template, request, session, g
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from email_validator import validate_email, EmailNotValidError
@@ -10,6 +10,7 @@ from helpers import apology, login_required, validate_password
 
 # Configure application
 app = Flask(__name__)
+app.config['DATABASE'] = 'chat_group.db'
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
@@ -17,8 +18,17 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 # Configure SQLite database
-con = sqlite3.connect("chat_group.db")
-db = con.cursor()
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect(app.config['DATABASE'])
+    return db
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
 
 @app.after_request
 def after_request(response):
@@ -29,10 +39,11 @@ def after_request(response):
     return response
 
 @app.route("/")
+@login_required
 def index():
     return render_template("index.html")
 
-@app.route("/register")
+@app.route("/register", methods=["GET", "POST"])
 def register():
     """Register user"""
 
@@ -67,20 +78,23 @@ def register():
 
         if isvalid is False:
             return apology(message, 400)
+        
+        # Get database connection
+        db = get_db()
+        cursor = db.cursor()
 
         # Query database for username
-        rows = db.execute(
-            "SELECT id FROM users WHERE username = ? OR email = ?", username, email
-        )
-
+        rows = cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email)).fetchall()
+        
         # Ensure username doesn't exists
         if (len(rows) > 0):
             return apology("username or email already exists", 400)
 
         password_hash = generate_password_hash(password)
         # Register new user into database
-        user_id = db.execute("INSERT INTO users (username, email, name, hash) VALUES(?, ?)", username, email, name, password_hash)
-
+        user_id = cursor.execute("INSERT INTO users (username, email, name, hash) VALUES(?, ?, ?, ?)", (username, email, name, password_hash)).lastrowid
+        db.commit()
+        
         # Remember which user are already registered
         session["user_id"] = user_id
 
@@ -105,11 +119,14 @@ def login():
             return apology("must provide username", 403)
         elif not request.form.get("password"):
             return apology("must provide password", 403)
+        
+        # Get database connection
+        db = get_db()
+        cursor = db.cursor()
+        cursor.row_factory = sqlite3.Row
 
         # Query database for username
-        rows = db.execute(
-            "SELECT * FROM users WHERE username = ?", request.form.get("username")
-        )
+        rows = cursor.execute("SELECT * FROM users WHERE username = ?", (request.form.get("username"),)).fetchall()
 
         # Ensure username exists and password is correct
         if len(rows) != 1 or not check_password_hash(
@@ -125,6 +142,7 @@ def login():
 
     # User reached route via GET (as by clicking a link or via redirect)
     return render_template("login.html")
+
 
 @app.route("/logout")
 def logout():
