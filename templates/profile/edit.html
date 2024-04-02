@@ -4,8 +4,28 @@ main %}
   <div
     class="sm:max-w-lg md:max-w-xl w-full h-full sm:h-fit p-8 sm:shadow-lg sm:m-auto sm:rounded-lg bg-slate-800"
   >
-    <h1 class="text-2xl font-semibold text-slate-200">Chat Group: Register</h1>
-    <form action="/register" method="POST" class="mt-4 mb-2">
+    <h1 class="text-2xl font-semibold text-slate-200">
+      Chat Group: Edit Profile
+    </h1>
+    <form action="/profile/edit" method="POST" class="mt-4 mb-2">
+      <div class="mb-4">
+        <label for="profile_url" class="block text-slate-200 mb-1"
+          >Profile Picture</label
+        >
+        {% if user.profile_url %}
+        <img
+          src="{{ user.profile_url }}"
+          alt="Profile Picture"
+          class="w-24 h-24 rounded-full mb-2"
+        />
+        {% endif %}
+        <input
+          type="file"
+          name="profile_url"
+          id="profile_url"
+          class="w-full px-3 py-2 rounded-lg bg-slate-600 text-slate-200"
+        />
+      </div>
       <div class="mb-4">
         <label for="username" class="block text-slate-200 mb-1">Username</label>
         <input
@@ -16,6 +36,7 @@ main %}
           id="username"
           class="w-full px-3 py-2 rounded-lg bg-slate-600 text-slate-200"
           required
+          value="{{ user.username }}"
         />
       </div>
       <div class="mb-4">
@@ -26,6 +47,7 @@ main %}
           id="email"
           class="w-full px-3 py-2 rounded-lg bg-slate-600 text-slate-200"
           required
+          value="{{ user.email }}"
         />
       </div>
       <div class="mb-4">
@@ -36,6 +58,7 @@ main %}
           id="name"
           class="w-full px-3 py-2 rounded-lg bg-slate-600 text-slate-200"
           required
+          value="{{ user.name }}"
         />
       </div>
       <div class="mb-4">
@@ -46,35 +69,19 @@ main %}
           id="password"
           class="w-full px-3 py-2 rounded-lg bg-slate-600 text-slate-200"
           required
+          autocomplete="off"
         />
         <small class="d-block mx-auto text-white"
-          >Password must be at least 8 characters long and at least must contain
-          one letter, one number, and one symbol</small
+          >Please enter your password to save changes</small
         >
-      </div>
-      <div class="mb-6">
-        <label for="confirm_password" class="block text-slate-200 mb-1"
-          >Confirm Password</label
-        >
-        <input
-          type="password"
-          name="confirm_password"
-          id="confirm_password"
-          class="w-full px-3 py-2 rounded-lg bg-slate-600 text-slate-200"
-          required
-        />
       </div>
       <button
         type="submit"
         class="w-full py-2.5 rounded-lg bg-blue-600 text-slate-200 hover:bg-blue-700"
       >
-        Register
+        Save
       </button>
     </form>
-    <small class="text-white"
-      >Already have an account?
-      <a href="/login" class="text-blue-400">Log In</a></small
-    >
   </div>
 </div>
 {% endblock %}

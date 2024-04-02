@@ -1,12 +1,13 @@
 import os
 import sqlite3
-
+import pytz
 from flask import Flask, flash, redirect, render_template, request, session, g
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from email_validator import validate_email, EmailNotValidError
+from datetime import datetime
 
-from helpers import apology, login_required, validate_password
+from helpers import apology, login_required, validate_password, row_to_object
 
 # Configure application
 app = Flask(__name__)
@@ -153,3 +154,91 @@ def logout():
 
     # Redirect user to login form
     return redirect("/")
+
+
+@app.route("/profile")
+@login_required
+def profile():
+    """Show user profile"""
+    # Get database connection
+    db = get_db()
+    cursor = db.cursor()
+    cursor.row_factory = sqlite3.Row
+    
+    users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
+
+    # Convert UTC time to Asia/Jakarta timezone
+    created_at = datetime.strptime(users[0]["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
+    created_at = created_at.astimezone(pytz.timezone('Asia/Jakarta')).strftime("%Y-%m-%d %H:%M:%S")
+    
+    user = row_to_object(users[0])
+    user.created_at = created_at
+    
+    return render_template("profile/index.html", user=user)
+
+
+@app.route("/profile/edit", methods=["GET", "POST"])
+@login_required
+def edit_profile():
+    """Edit user profile"""
+    
+    # Get database connection
+    db = get_db()
+    cursor = db.cursor()
+    cursor.row_factory = sqlite3.Row
+    
+    users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
+     
+    if request.method == "POST":
+        username = request.form.get("username")
+        email = request.form.get("email")
+        name = request.form.get("name")
+        password = request.form.get("password")
+        
+        # Ensure input fields are not empty
+        if not username:
+            return apology("must provide username", 403)
+        elif not email:
+            return apology("must provide email", 403)
+        elif not name:
+            return apology("must provide name", 403)
+        elif not password:
+            return apology("must provide password", 403)
+
+        # Ensure email is valid
+        elif email:
+            try:
+                validate_email(email)
+            except EmailNotValidError as e:
+                return apology(str(e), 400)
+
+        # Ensure confirmation match with the password
+        elif not request.form.get("confirm_password") or password != request.form.get("confirm_password"):
+            return apology("passwords don't match", 400)
+
+        isvalid, message = validate_password(password)
+
+        if isvalid is False:
+            return apology(message, 400)
+        
+        # Query database for username
+        rows = cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email)).fetchall()
+
+        # Ensure username doesn't exists
+        if (len(rows) > 0):
+            return apology("username or email already exists", 400)
+        
+        # Ensure password match
+        if not check_password_hash(users[0]["hash"], password):
+            return apology("invalid password", 403)
+        
+        # Update user profile
+        profile_url = None
+        cursor.execute("UPDATE users SET username = ?, email = ?, name = ?, profile_url = ? WHERE id = ?", (username, email, name, profile_url, session["user_id"]))
+        db.commit()
+        
+        # Redirect user to home page
+        flash("Profile updated!")
+        return render_template("profile.html")
+
+    return render_template("profile/edit.html", user=users[0])

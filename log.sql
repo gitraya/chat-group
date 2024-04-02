@@ -5,5 +5,6 @@ CREATE TABLE users (
     email TEXT NOT NULL,
     name TEXT NOT NULL,
     hash TEXT NOT NULL,
-    profile_url TEXT
+    profile_url TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
