@@ -55,3 +55,15 @@ def validate_password(password):
         return False, "Password must contain at least one letter, one number, and one symbol"
 
     return True, "Password is valid"
+
+class MyObject:
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+def row_to_object(row):
+    # Convert sqlite3.Row to a dictionary
+    row_dict = dict(row)
+    # Create a new instance of MyObject using dictionary unpacking
+    obj = MyObject(**row_dict)
+    return obj

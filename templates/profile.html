@@ -1,0 +1,51 @@
+{% extends "layout.html" %} {% block title %} Register {% endblock %} {% block
+main %}
+<div class="w-full flex min-h-screen bg-slate-950">
+  <div
+    class="sm:max-w-lg md:max-w-xl w-full h-full sm:h-fit p-8 sm:shadow-lg sm:m-auto sm:rounded-lg bg-slate-800 text-white text-lg"
+  >
+    <h1 class="text-2xl font-semibold text-slate-200">Chat Group: Profile</h1>
+    <div class="py-4 flex justify-between border-b border-slate-500">
+      <div class="flex-col">
+        {% if user.profile_url %}
+        <img
+          src="{{ user.profile_url }}"
+          alt="Profile Picture"
+          class="w-24 h-24 rounded-full"
+        />
+        {% else %}
+        <div
+          class="w-24 h-24 bg-slate-300 rounded-full flex items-center justify-center"
+        >
+          <i class="fa-solid fa-user fa-3x"></i>
+        </div>
+        {% endif %}
+        <h3 class="mt-2">Profile Picture</h3>
+      </div>
+      <div>
+        <a href="/profile/edit" class="text-blue-500">Edit Profile</a>
+      </div>
+    </div>
+    <div class="py-4 flex justify-between border-b border-slate-500">
+      <h3>Username</h3>
+      <p>{{ user.username }}</p>
+    </div>
+    <div class="py-4 flex justify-between border-b border-slate-500">
+      <h3>Email</h3>
+      <p>{{ user.email }}</p>
+    </div>
+    <div class="py-4 flex justify-between border-b border-slate-500">
+      <h3>Name</h3>
+      <p>{{ user.name }}</p>
+    </div>
+    <div class="py-4 flex justify-between border-b border-slate-500">
+      <h3>Joined</h3>
+      <p>{{ user.created_at }}</p>
+    </div>
+    <div class="py-4 flex justify-between">
+      <h3>Password</h3>
+      <a href="/password" class="text-blue-500">Change Password</a>
+    </div>
+  </div>
+</div>
+{% endblock %}
