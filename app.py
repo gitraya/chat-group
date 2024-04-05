@@ -1,17 +1,23 @@
 import os
 import sqlite3
 import pytz
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, session, g
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from email_validator import validate_email, EmailNotValidError
 from datetime import datetime
 
-from helpers import apology, login_required, validate_password, row_to_object
+from helpers import apology, login_required, validate_password, row_to_object, allowed_file
+
+load_dotenv()
 
 # Configure application
 app = Flask(__name__)
-app.config['DATABASE'] = 'chat_group.db'
+app.config['DATABASE'] = os.getenv("DATABASE")
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
@@ -24,6 +30,13 @@ def get_db():
     if db is None:
         db = g._database = sqlite3.connect(app.config['DATABASE'])
     return db
+
+cloudinary.config( 
+  cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
+  api_key = os.getenv("CLOUDINARY_API_KEY"), 
+  api_secret = os.getenv("CLOUDINARY_API_SECRET"),
+  secure = True
+)
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -211,34 +224,98 @@ def edit_profile():
                 validate_email(email)
             except EmailNotValidError as e:
                 return apology(str(e), 400)
-
-        # Ensure confirmation match with the password
-        elif not request.form.get("confirm_password") or password != request.form.get("confirm_password"):
-            return apology("passwords don't match", 400)
-
-        isvalid, message = validate_password(password)
-
-        if isvalid is False:
-            return apology(message, 400)
         
         # Query database for username
         rows = cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email)).fetchall()
 
         # Ensure username doesn't exists
-        if (len(rows) > 0):
+        if len(rows) > 0 and rows[0]["id"] != session["user_id"]:
             return apology("username or email already exists", 400)
+        
+        # Ensure if user uploaded a profile picture
+        profile_url = users[0]["profile_url"]
+        if "profile_url" in request.files:
+            profile_picture = request.files["profile_url"]
+            
+            if profile_picture.filename == "":
+                return apology("no file selected", 400)
+            
+            if not allowed_file(profile_picture.filename):
+                return apology("file type not allowed", 400)
+            
+            # Upload profile picture to Cloudinary
+            profile_url = cloudinary.uploader.upload(profile_picture,
+                folder="chat-group",
+                public_id=session["user_id"],
+                overwrite=True,
+            )["url"]
         
         # Ensure password match
         if not check_password_hash(users[0]["hash"], password):
             return apology("invalid password", 403)
         
         # Update user profile
-        profile_url = None
         cursor.execute("UPDATE users SET username = ?, email = ?, name = ?, profile_url = ? WHERE id = ?", (username, email, name, profile_url, session["user_id"]))
         db.commit()
         
+        user = row_to_object(users[0])
+        user.username = username
+        user.email = email
+        user.name = name
+        user.profile_url = profile_url
+        
         # Redirect user to home page
         flash("Profile updated!")
-        return render_template("profile.html")
+        return render_template("profile/index.html", user=user)
 
     return render_template("profile/edit.html", user=users[0])
+
+
+@app.route("/password", methods=["GET", "POST"])
+@login_required
+def password():
+    """Change User Password"""
+
+    if request.method == "POST":
+        old = request.form.get("old")
+        password = request.form.get("password")
+        confirmation = request.form.get("confirm_password")
+
+        # Ensure old was submitted
+        if not old:
+            return apology("must provide old password", 400)
+
+        # Ensure password was submitted
+        elif not password:
+            return apology("must provide new password", 400)
+
+        # Ensure confirmation match with the password
+        elif not confirmation or password != confirmation:
+            return apology("new passwords don't match", 400)
+        
+        # Get database connection
+        db = get_db()
+        cursor = db.cursor()
+        cursor.row_factory = sqlite3.Row
+        
+        users = cursor.execute("SELECT hash FROM users WHERE id = ?", (session["user_id"],)).fetchall()
+
+        if not check_password_hash(users[0]["hash"], old):
+            return apology("old password didn't match", 403)
+
+        # Validate new password
+        isvalid, message = validate_password(password)
+
+        if isvalid is False:
+            return apology(message, 400)
+
+        password_hash = generate_password_hash(password)
+        # Update password hash
+        cursor.execute("UPDATE users SET hash = ? WHERE id = ?", (password_hash, session["user_id"]))
+        db.commit()
+
+        # Redirect user to home page
+        flash("Password Changed!")
+        return redirect("/")
+
+    return render_template("password.html")

@@ -1,6 +1,8 @@
 from flask import redirect, render_template, session
 from functools import wraps
 
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg'}
+
 def apology(message, code=400):
     """Render message as an apology to user."""
 
@@ -67,3 +69,7 @@ def row_to_object(row):
     # Create a new instance of MyObject using dictionary unpacking
     obj = MyObject(**row_dict)
     return obj
+
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS

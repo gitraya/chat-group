@@ -7,7 +7,12 @@ main %}
     <h1 class="text-2xl font-semibold text-slate-200">
       Chat Group: Edit Profile
     </h1>
-    <form action="/profile/edit" method="POST" class="mt-4 mb-2">
+    <form
+      action="/profile/edit"
+      method="POST"
+      class="mt-4 mb-2"
+      enctype="multipart/form-data"
+    >
       <div class="mb-4">
         <label for="profile_url" class="block text-slate-200 mb-1"
           >Profile Picture</label
