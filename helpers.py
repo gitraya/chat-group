@@ -73,3 +73,12 @@ def row_to_object(row):
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+def make_initial(name):
+    # Split the name into words
+    words = name.split()
+    # If the name contains more than one word, take the first letter of the first two words
+    if len(words) >= 2:
+        return words[0][0].upper() + words[1][0].upper()
+    else:
+        return words[0][0].upper() + words[0][1].upper()

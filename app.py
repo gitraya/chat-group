@@ -5,13 +5,13 @@ import cloudinary
 import cloudinary.uploader
 import cloudinary.api
 from dotenv import load_dotenv
-from flask import Flask, flash, redirect, render_template, request, session, g
+from flask import Flask, flash, redirect, render_template, request, session, g, jsonify
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from email_validator import validate_email, EmailNotValidError
 from datetime import datetime
 
-from helpers import apology, login_required, validate_password, row_to_object, allowed_file
+from helpers import apology, login_required, validate_password, row_to_object, allowed_file, make_initial
 
 load_dotenv()
 
@@ -55,7 +55,26 @@ def after_request(response):
 @app.route("/")
 @login_required
 def index():
-    return render_template("index.html")
+    """Show home page"""
+    
+    # Get database connection
+    db = get_db()
+    cursor = db.cursor()
+    cursor.row_factory = sqlite3.Row
+    
+    # Query database for channels
+    rows = cursor.execute("SELECT * FROM channels ORDER BY created_at DESC").fetchall()
+    
+    # Query database for user
+    users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
+    
+    channels = [row_to_object(row) for row in rows]
+    
+    for channel in channels:
+        channel.initial = make_initial(channel.name)
+    
+    return render_template("index.html", channels=channels, user=users[0])
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -190,7 +209,7 @@ def profile():
     return render_template("profile/index.html", user=user)
 
 
-@app.route("/profile/edit", methods=["GET", "POST"])
+@app.route("/profile/edit", methods=["GET", "PUT"])
 @login_required
 def edit_profile():
     """Edit user profile"""
@@ -202,7 +221,7 @@ def edit_profile():
     
     users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
      
-    if request.method == "POST":
+    if request.method == "PUT":
         username = request.form.get("username")
         email = request.form.get("email")
         name = request.form.get("name")
@@ -271,12 +290,12 @@ def edit_profile():
     return render_template("profile/edit.html", user=users[0])
 
 
-@app.route("/password", methods=["GET", "POST"])
+@app.route("/password", methods=["GET", "PUT"])
 @login_required
 def password():
     """Change User Password"""
 
-    if request.method == "POST":
+    if request.method == "PUT":
         old = request.form.get("old")
         password = request.form.get("password")
         confirmation = request.form.get("confirm_password")
@@ -319,3 +338,77 @@ def password():
         return redirect("/")
 
     return render_template("password.html")
+
+
+@app.route("/channel", methods=["POST"])
+@login_required
+def channel():
+    """Create new channel"""
+
+    name = request.form.get("name")
+    description = request.form.get("description")
+        
+    # Ensure input fields are not empty
+    if not name:
+        return apology("must provide channel name", 400)
+    elif not description:
+        return apology("must provide channel description", 400)
+        
+    # Get database connection
+    db = get_db()
+    cursor = db.cursor()
+        
+    # Register new channel into database
+    cursor.execute("INSERT INTO channels (name, description, admin_id) VALUES(?, ?, ?)", (name, description, session["user_id"]))
+    
+    # Insert new member into channel
+    channel_id = cursor.lastrowid
+    cursor.execute("INSERT INTO members (channel_id, user_id) VALUES(?, ?)", (channel_id, session["user_id"]))
+    
+    db.commit()
+    
+    # Redirect user to home page
+    flash("Channel Created!")
+    return redirect("/channel/" + str(channel_id))
+
+
+@app.route("/channel/search", methods=["GET"])
+@login_required
+def search_channel():
+    """Search channel by name"""
+    
+    name = request.args.get("name")
+    
+    # Get database connection
+    db = get_db()
+    cursor = db.cursor()
+    cursor.row_factory = sqlite3.Row
+    
+    # Query database for channels
+    channels = cursor.execute("SELECT * FROM channels WHERE name LIKE ?", ('%' + name + '%',)).fetchall()
+    
+    return jsonify([row_to_object(channel) for channel in channels])
+
+
+@app.route("/member", methods=["POST"])
+@login_required
+def member():
+    """Add new member to channel"""
+
+    channel_id = request.form.get("channel_id")
+        
+    # Ensure input fields are not empty
+    if not channel_id:
+        return apology("must provide channel id", 400)
+        
+    # Get database connection
+    db = get_db()
+    cursor = db.cursor()
+    
+    # Register new member into channel
+    cursor.execute("INSERT INTO members (channel_id, user_id) VALUES(?, ?)", (channel_id, session["user_id"]))
+    db.commit()
+    
+    # Redirect user to home page
+    flash("Member Added!")
+    return redirect("/channel/" + str(channel_id))

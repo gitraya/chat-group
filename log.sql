@@ -8,3 +8,35 @@ CREATE TABLE users (
     profile_url TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create the channels table
+CREATE TABLE channels (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    name TEXT NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    admin_id INTEGER NOT NULL,
+    FOREIGN KEY (admin_id) REFERENCES users(id)
+);
+
+-- Create the members table
+CREATE TABLE members (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INTEGER NOT NULL,
+    channel_id INTEGER NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (channel_id) REFERENCES channels(id)
+);
+
+-- Create the messages table
+CREATE TABLE messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    user_id INTEGER NOT NULL,
+    channel_id INTEGER NOT NULL,
+    message TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id),
+    FOREIGN KEY (channel_id) REFERENCES channels(id)
+);
+
