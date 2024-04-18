@@ -1,0 +1,14 @@
+{% if not channels %}
+<li class="text-slate-200">No channels found</li>
+{% else %} {% for channel in channels %}
+<li>
+  <a
+    href="/channel/{{ channel.id }}"
+    class="flex items-center hover:bg-slate-800 text-slate-200 rounded-lg hover:text-white"
+    ><div class="bg-slate-700 px-2 py-1.5 rounded uppercase">
+      {{ channel.initial }}
+    </div>
+    <span class="ml-3 font-semibold text-lg">{{ channel.name }}</span></a
+  >
+</li>
+{% endfor %} {% endif %}
