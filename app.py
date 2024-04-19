@@ -72,11 +72,15 @@ def new_message(message):
     
     # Query database for user
     users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
+    
+    # Insert new message into database
+    cursor.execute("INSERT INTO messages (channel_id, user_id, message) VALUES(?, ?, ?)", (session["channel_id"], session["user_id"], message))
+    db.commit()
 
     data = { 
         "name": users[0]["name"],
         "profile_url": users[0]["profile_url"],
-        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "message": message,
     }
 
@@ -112,10 +116,24 @@ def index():
     # Query database for user
     users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
     
+    # Query database for messages
+    messages = cursor.execute("""
+        SELECT users.name, users.profile_url, messages.message, messages.created_at FROM messages
+        JOIN users ON messages.user_id = users.id
+        WHERE channel_id = ?
+        ORDER BY messages.created_at ASC
+    """, (session["channel_id"],)).fetchall()
+    
     channels = [dict(row) for row in rows]
-    print(channels)
+
     for channel in channels:
         channel["initial"] = make_initial(channel.get("name"))
+        
+    messages = [dict(message) for message in messages]
+    
+    for message in messages:
+        message["created_at"] = datetime.strptime(message["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
+        message["created_at"] = message["created_at"].astimezone(pytz.timezone('Asia/Jakarta')).strftime("%Y-%m-%d %H:%M:%S")
         
     active_channel = None
     
@@ -123,7 +141,7 @@ def index():
         active_channel = cursor.execute("SELECT * FROM channels WHERE id = ? LIMIT 1", (session["channel_id"],)).fetchall()
         active_channel = dict(active_channel[0])
     
-    return render_template("index.html", channels=channels, user=users[0], channel=active_channel)
+    return render_template("index.html", channels=channels, user=users[0], channel=active_channel, messages=messages)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -461,16 +479,23 @@ def channel_detail(channel_id):
         emit('new_member', json.dumps(dict(members[0])), include_self=True, to=channel_id, namespace='/')
     
     # Query database for messages
-    messages = cursor.execute("SELECT * FROM messages WHERE channel_id = ? ORDER BY created_at DESC", (channel_id,)).fetchall()
+    messages = cursor.execute("""
+        SELECT users.name, users.profile_url, messages.message, messages.created_at FROM messages
+        JOIN users ON messages.user_id = users.id
+        WHERE channel_id = ?
+        ORDER BY messages.created_at ASC
+    """, (channel_id,)).fetchall()
     
     channel = dict(channels[0])
     channel["members"] = [dict(member) for member in members]
     user = dict(users[0])
     
-    for message in messages:
-        message.created_at = datetime.strptime(message["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
-        message.created_at = message.created_at.astimezone(pytz.timezone('Asia/Jakarta')).strftime("%Y-%m-%d %H:%M:%S")
+    messages = [dict(message) for message in messages]
     
+    for message in messages:
+        message["created_at"] = datetime.strptime(message["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
+        message["created_at"] = message["created_at"].astimezone(pytz.timezone('Asia/Jakarta')).strftime("%Y-%m-%d %H:%M:%S")
+
     # Remember which channel has been selected  
     session["channel_id"] = channel_id
     

@@ -35,6 +35,11 @@
       socket.on("new_message", function (json) {
         const data = JSON.parse(json);
         const chatMessages = document.querySelector("#message-list");
+
+        if (chatMessages.innerHTML.includes("empty-messages")) {
+          chatMessages.innerHTML = "";
+        }
+
         chatMessages.innerHTML += `
           <li class="flex gap-4">
             ${
@@ -52,7 +57,7 @@
                 <span class="font-semibold text-lg text-slate-300">${
                   data.name
                 }</span>
-                <span class="text-slate-400 text-sm">${data.date}</span>
+                <span class="text-slate-400 text-sm">${data.created_at}</span>
               </div>
               <p class="text-lg text-gray-100">${data.message}</p>
             </div>
