@@ -1,0 +1,10 @@
+<div
+  class="flex py-4 pl-7 pr-8 justify-between items-center border-b border-b-2 border-slate-900"
+  style="height: 70px"
+>
+  {% if channel %}
+  <h2 class="text-lg font-semibold text-white">
+    <a href="/channel/{{ channel.id }}">{{ channel.name }}</a>
+  </h2>
+  {% endif %}
+</div>

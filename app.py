@@ -4,14 +4,17 @@ import pytz
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+import json
+import uuid
 from dotenv import load_dotenv
 from flask import Flask, flash, redirect, render_template, request, session, g, jsonify
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from email_validator import validate_email, EmailNotValidError
 from datetime import datetime
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
-from helpers import apology, login_required, validate_password, row_to_object, allowed_file, make_initial
+from helpers import apology, login_required, validate_password, allowed_file, make_initial
 
 load_dotenv()
 
@@ -37,6 +40,47 @@ cloudinary.config(
   api_secret = os.getenv("CLOUDINARY_API_SECRET"),
   secure = True
 )
+
+socketio = SocketIO(app)
+
+client_rooms = {}
+
+@socketio.on('reset_room')
+def reset_room():
+    id = session.get("id")
+    channel_id = session.get("channel_id")
+
+    # Leave current room
+    if id and id in client_rooms:
+        leave_room(client_rooms[id])
+        print(f"User {id} left room {client_rooms[id]}")
+
+    # Join new room
+    if id and channel_id:
+        join_room(channel_id)
+        client_rooms[id] = channel_id
+        print(f"User {id} joined room {channel_id}")
+
+
+@socketio.on('new_message')
+def new_message(message):
+    print('received message: ' + str(message))
+    # Get database connection
+    db = get_db()
+    cursor = db.cursor()
+    cursor.row_factory = sqlite3.Row
+    
+    # Query database for user
+    users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
+
+    data = { 
+        "name": users[0]["name"],
+        "profile_url": users[0]["profile_url"],
+        "date": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "message": message,
+    }
+
+    emit('new_message', json.dumps(data), include_self=True, to=session["channel_id"])
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -68,12 +112,18 @@ def index():
     # Query database for user
     users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
     
-    channels = [row_to_object(row) for row in rows]
-    
+    channels = [dict(row) for row in rows]
+    print(channels)
     for channel in channels:
-        channel.initial = make_initial(channel.name)
+        channel["initial"] = make_initial(channel.get("name"))
+        
+    active_channel = None
     
-    return render_template("index.html", channels=channels, user=users[0])
+    if "channel_id" in session:
+        active_channel = cursor.execute("SELECT * FROM channels WHERE id = ? LIMIT 1", (session["channel_id"],)).fetchall()
+        active_channel = dict(active_channel[0])
+    
+    return render_template("index.html", channels=channels, user=users[0], channel=active_channel)
 
 
 @app.route("/register", methods=["GET", "POST"])
@@ -169,6 +219,7 @@ def login():
 
         # Remember which user has logged in
         session["user_id"] = rows[0]["id"]
+        session["id"] = uuid.uuid4()
 
         # Redirect user to home page
         return redirect("/")
@@ -203,8 +254,8 @@ def profile():
     created_at = datetime.strptime(users[0]["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
     created_at = created_at.astimezone(pytz.timezone('Asia/Jakarta')).strftime("%Y-%m-%d %H:%M:%S")
     
-    user = row_to_object(users[0])
-    user.created_at = created_at
+    user = dict(users[0])
+    user["created_at"] = created_at
     
     return render_template("profile/index.html", user=user)
 
@@ -277,11 +328,11 @@ def edit_profile():
         cursor.execute("UPDATE users SET username = ?, email = ?, name = ?, profile_url = ? WHERE id = ?", (username, email, name, profile_url, session["user_id"]))
         db.commit()
         
-        user = row_to_object(users[0])
-        user.username = username
-        user.email = email
-        user.name = name
-        user.profile_url = profile_url
+        user = dict(users[0])
+        user["username"] = username
+        user["email"] = email
+        user["name"] = name
+        user["profile_url"] = profile_url
         
         # Redirect user to home page
         flash("Profile updated!")
@@ -342,7 +393,7 @@ def password():
 
 @app.route("/channel", methods=["POST"])
 @login_required
-def channel():
+def create_channel():
     """Create new channel"""
 
     name = request.form.get("name")
@@ -372,6 +423,60 @@ def channel():
     return redirect("/channel/" + str(channel_id))
 
 
+@app.route("/channel/<int:channel_id>")
+@login_required
+def channel_detail(channel_id):
+    """Show channel page"""
+    
+    # Get database connection
+    db = get_db()
+    cursor = db.cursor()
+    cursor.row_factory = sqlite3.Row
+    
+    # Query database for channel
+    channels = cursor.execute("SELECT * FROM channels WHERE id = ? LIMIT 1", (channel_id,)).fetchall()
+    
+    # Query database for user
+    users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
+    
+    # Check and insert new member into channel if not exists
+    members = cursor.execute("SELECT * FROM members WHERE channel_id = ? AND user_id = ?", (channel_id, session["user_id"])).fetchall()
+    
+    is_new_member = False
+    if len(members) == 0:
+        # Register new member into channel
+        is_new_member = True
+        cursor.execute("INSERT INTO members (channel_id, user_id) VALUES(?, ?)", (channel_id, session["user_id"]))
+        db.commit()
+        
+    members = cursor.execute("""
+        SELECT users.name, users.profile_url FROM members
+        JOIN users ON members.user_id = users.id
+        WHERE channel_id = ?
+        ORDER BY members.created_at DESC
+    """, (channel_id,)).fetchall()
+    
+    # Send new member data to connected clients
+    if is_new_member:
+        emit('new_member', json.dumps(dict(members[0])), include_self=True, to=channel_id, namespace='/')
+    
+    # Query database for messages
+    messages = cursor.execute("SELECT * FROM messages WHERE channel_id = ? ORDER BY created_at DESC", (channel_id,)).fetchall()
+    
+    channel = dict(channels[0])
+    channel["members"] = [dict(member) for member in members]
+    user = dict(users[0])
+    
+    for message in messages:
+        message.created_at = datetime.strptime(message["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
+        message.created_at = message.created_at.astimezone(pytz.timezone('Asia/Jakarta')).strftime("%Y-%m-%d %H:%M:%S")
+    
+    # Remember which channel has been selected  
+    session["channel_id"] = channel_id
+    
+    return render_template("channel.html", channel=channel, user=user, messages=messages)
+
+
 @app.route("/channel/search", methods=["GET"])
 @login_required
 def search_channel():
@@ -385,30 +490,15 @@ def search_channel():
     cursor.row_factory = sqlite3.Row
     
     # Query database for channels
-    channels = cursor.execute("SELECT * FROM channels WHERE name LIKE ?", ('%' + name + '%',)).fetchall()
+    rows = cursor.execute("SELECT * FROM channels WHERE name LIKE ? ORDER BY created_at DESC", ('%' + name + '%',)).fetchall()
     
-    return jsonify([row_to_object(channel) for channel in channels])
+    channels = [dict(row) for row in rows]
+    
+    for channel in channels:
+        channel["initial"] = make_initial(channel.get("name"))
+    
+    return render_template("components/channel.html", channels=channels)
 
 
-@app.route("/member", methods=["POST"])
-@login_required
-def member():
-    """Add new member to channel"""
-
-    channel_id = request.form.get("channel_id")
-        
-    # Ensure input fields are not empty
-    if not channel_id:
-        return apology("must provide channel id", 400)
-        
-    # Get database connection
-    db = get_db()
-    cursor = db.cursor()
-    
-    # Register new member into channel
-    cursor.execute("INSERT INTO members (channel_id, user_id) VALUES(?, ?)", (channel_id, session["user_id"]))
-    db.commit()
-    
-    # Redirect user to home page
-    flash("Member Added!")
-    return redirect("/channel/" + str(channel_id))
+if __name__ == "__main__":
+    socketio.run(app)

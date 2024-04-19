@@ -36,5 +36,22 @@
   {% include "components/profile.html" %}
 </nav>
 
-<div class="w-full bg-slate-600"></div>
+<div class="w-full bg-slate-700 flex flex-col">
+  {% include "components/header.html" %} {% include
+  "components/message-list.html" %} {% include "components/message-input.html"
+  %}
+</div>
+{% endblock %} {% block scripts %}
+<script>
+  function searchChannels(event) {
+    console.log(event.target.value);
+    const query = event.target.value.toLowerCase();
+
+    fetch(`/channel/search?name=${query}`)
+      .then((response) => response.text())
+      .then((html) => {
+        document.querySelector("#channel-list").innerHTML = html;
+      });
+  }
+</script>
 {% endblock %} ```

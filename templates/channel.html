@@ -16,7 +16,10 @@
     <p class="text-lg pl-7 pr-8 break-all mb-10">{{ channel.description }}</p>
 
     <h2 class="pl-7 pr-8 mb-2 font-semibold">MEMBERS</h2>
-    <ul class="flex flex-col pl-7 pr-8 gap-5 py-4 overflow-y-auto">
+    <ul
+      id="member-list"
+      class="flex flex-col pl-7 pr-8 gap-5 py-4 overflow-y-auto"
+    >
       {% for member in channel.members %}
       <li class="flex items-center text-slate-200">
         {% if member.profile_url %}
@@ -40,5 +43,9 @@
   {% include "components/profile.html" %}
 </nav>
 
-<div class="w-full bg-slate-600"></div>
+<div class="w-full bg-slate-700 flex flex-col">
+  {% include "components/header.html" %} {% include
+  "components/message-list.html" %} {% include "components/message-input.html"
+  %}
+</div>
 {% endblock %} ```

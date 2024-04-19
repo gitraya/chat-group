@@ -30,20 +30,88 @@
       const socket = io();
       socket.on("connect", function () {
         console.log("Connected to the server!");
-        socket.emit("message", "Hello from the client!");
       });
-    </script>
-    <script>
-      function searchChannels(event) {
-        console.log(event.target.value);
-        const query = event.target.value.toLowerCase();
 
-        fetch(`/channel/search?name=${query}`)
-          .then((response) => response.text())
-          .then((html) => {
-            document.querySelector("#channel-list").innerHTML = html;
-          });
+      socket.on("new_message", function (json) {
+        const data = JSON.parse(json);
+        const chatMessages = document.querySelector("#message-list");
+        chatMessages.innerHTML += `
+          <li class="flex gap-4">
+            ${
+              data.profile_url
+                ? `<img src="${data.profile_url}" alt="Profile Picture" class="w-9 h-9 rounded-lg shrink-0" />`
+                : `
+            <div
+              class="w-9 h-9 bg-slate-300 rounded-lg flex items-center justify-center shrink-0"
+            >
+              <i class="fa-solid fa-user"></i>
+            </div>`
+            }
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center gap-3">
+                <span class="font-semibold text-lg text-slate-300">${
+                  data.name
+                }</span>
+                <span class="text-slate-400 text-sm">${data.date}</span>
+              </div>
+              <p class="text-lg text-gray-100">${data.message}</p>
+            </div>
+          </li>
+        `;
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+      });
+
+      socket.on("new_member", function (json) {
+        const member = JSON.parse(json);
+        const memberList = document.querySelector("#member-list");
+        memberList.innerHTML =
+          `
+        <li class="flex items-center text-slate-200">
+          ${
+            member.profile_url
+              ? `
+          <img
+            src="${member.profile_url}"
+            alt="Profile Picture"
+            class="w-9 h-9 rounded"
+          />`
+              : `
+          <div class="w-9 h-9 bg-slate-300 rounded flex items-center justify-center">
+            <i class="fa-solid fa-user"></i>
+          </div>`
+          }
+          <span class="ml-3 font-semibold text-lg">${member.name}</span>
+        </li>
+      ` + memberList.innerHTML;
+      });
+
+      function resetRoom() {
+        socket.emit("reset_room");
       }
+
+      function submitMessage(event) {
+        event.preventDefault();
+        const form = event.target;
+        const formData = new FormData(form);
+        const message = formData.get("message");
+
+        socket.emit("new_message", message);
+        form.reset();
+      }
+
+      function scrollToBottom() {
+        const chatMessages = document.getElementById("message-list");
+        if (!chatMessages) return;
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+        chatMessages.classList.remove("invisible");
+      }
+
+      window.onload = function () {
+        resetRoom();
+        scrollToBottom();
+      };
     </script>
+    {% block scripts %}{% endblock %}
   </body>
 </html>
