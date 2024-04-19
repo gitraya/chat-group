@@ -63,13 +63,6 @@ class MyObject:
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-def row_to_object(row):
-    # Convert sqlite3.Row to a dictionary
-    row_dict = dict(row)
-    # Create a new instance of MyObject using dictionary unpacking
-    obj = MyObject(**row_dict)
-    return obj
-
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
