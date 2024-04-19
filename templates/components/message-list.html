@@ -2,7 +2,15 @@
   id="message-list"
   class="flex invisible flex-col h-full pt-8 pb-6 px-16 gap-6 overflow-auto"
 >
-  {% if messages %} {% for message in messages %}
+  {% if messages %} {% for message in messages %} {% if message.start_date_at %}
+  <li class="flex justify-center items-center">
+    <hr class="w-full border border-slate-500" />
+    <p class="text-xs font-semibold text-slate-300 shrink-0 px-3">
+      {{ message.start_date_at }}
+    </p>
+    <hr class="w-full border border-slate-500" />
+  </li>
+  {% endif %}
   <li class="flex gap-4">
     {% if message.profile_url %}
     <img

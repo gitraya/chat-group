@@ -1,3 +1,6 @@
+import os
+import pytz
+from datetime import datetime, timedelta
 from flask import redirect, render_template, session
 from functools import wraps
 
@@ -75,3 +78,19 @@ def make_initial(name):
         return words[0][0].upper() + words[1][0].upper()
     else:
         return words[0][0].upper() + words[0][1].upper()
+
+def format_message_date(iso_date):
+    dt_object = datetime.fromisoformat(iso_date)
+    dt_object = dt_object.replace(tzinfo=pytz.utc).astimezone(pytz.timezone(os.getenv("TIMEZONE")))
+    
+    # Check if the date is today
+    if dt_object.date() == datetime.now().date():
+        return "today at " + dt_object.strftime("%I:%M %p")
+    
+    # Check if the date is yesterday
+    elif dt_object.date() == datetime.now().date() - timedelta(days=1):
+        return "yesterday at " + dt_object.strftime("%I:%M %p")
+    
+    # Return the date in the format /month/day/year time
+    else:
+        return dt_object.strftime("%m/%d/%Y %I:%M %p")

@@ -36,6 +36,7 @@ CREATE TABLE messages (
     user_id INTEGER NOT NULL,
     channel_id INTEGER NOT NULL,
     message TEXT NOT NULL,
+    is_start_date BOOLEAN DEFAULT FALSE,
     FOREIGN KEY (user_id) REFERENCES users(id),
     FOREIGN KEY (channel_id) REFERENCES channels(id)
 );

@@ -14,13 +14,14 @@ from email_validator import validate_email, EmailNotValidError
 from datetime import datetime
 from flask_socketio import SocketIO, emit, join_room, leave_room
 
-from helpers import apology, login_required, validate_password, allowed_file, make_initial
+from helpers import apology, login_required, validate_password, allowed_file, make_initial, format_message_date
 
 load_dotenv()
 
 # Configure application
 app = Flask(__name__)
 app.config['DATABASE'] = os.getenv("DATABASE")
+app.config['TIMEZONE'] = os.getenv("TIMEZONE")
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
@@ -73,16 +74,29 @@ def new_message(message):
     # Query database for user
     users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
     
+    # Query latest message
+    messages = cursor.execute("SELECT created_at FROM messages WHERE channel_id = ? ORDER BY created_at DESC LIMIT 1", (session["channel_id"],)).fetchall()
+    
+    # Check if the message is the start date
+    is_start_date = False
+    if len(messages) == 0:
+        is_start_date = True
+    elif datetime.now().date() != datetime.fromisoformat(messages[0]["created_at"]).date():
+        is_start_date = True
+    
     # Insert new message into database
-    cursor.execute("INSERT INTO messages (channel_id, user_id, message) VALUES(?, ?, ?)", (session["channel_id"], session["user_id"], message))
+    cursor.execute("INSERT INTO messages (channel_id, user_id, message, is_start_date) VALUES(?, ?, ?, ?)", (session["channel_id"], session["user_id"], message, is_start_date))
     db.commit()
 
     data = { 
         "name": users[0]["name"],
         "profile_url": users[0]["profile_url"],
-        "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "created_at": "today at " + datetime.now().strftime("%I:%M %p"),
         "message": message,
     }
+    
+    if is_start_date:
+        data["start_date_at"] = datetime.now().strftime("%B %d, %Y")
 
     emit('new_message', json.dumps(data), include_self=True, to=session["channel_id"])
 
@@ -118,7 +132,7 @@ def index():
     
     # Query database for messages
     messages = cursor.execute("""
-        SELECT users.name, users.profile_url, messages.message, messages.created_at FROM messages
+        SELECT users.name, users.profile_url, messages.message, messages.created_at, messages.is_start_date FROM messages
         JOIN users ON messages.user_id = users.id
         WHERE channel_id = ?
         ORDER BY messages.created_at ASC
@@ -132,8 +146,10 @@ def index():
     messages = [dict(message) for message in messages]
     
     for message in messages:
-        message["created_at"] = datetime.strptime(message["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
-        message["created_at"] = message["created_at"].astimezone(pytz.timezone('Asia/Jakarta')).strftime("%Y-%m-%d %H:%M:%S")
+        if message["is_start_date"]:
+            message["start_date_at"] = datetime.fromisoformat(message["created_at"]).strftime("%B %d, %Y")
+            
+        message["created_at"] = format_message_date(message["created_at"])
         
     active_channel = None
     
@@ -201,7 +217,7 @@ def register():
 
         # Redirect user to home page
         flash("Registered!")
-        return redirect("/")
+        return redirect("/channel/1")
 
     return render_template("register.html")
 
@@ -268,9 +284,9 @@ def profile():
     
     users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
 
-    # Convert UTC time to Asia/Jakarta timezone
+    # Convert UTC time to environment timezone
     created_at = datetime.strptime(users[0]["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
-    created_at = created_at.astimezone(pytz.timezone('Asia/Jakarta')).strftime("%Y-%m-%d %H:%M:%S")
+    created_at = created_at.astimezone(pytz.timezone(app.config['TIMEZONE'])).strftime("%Y-%m-%d %H:%M:%S")
     
     user = dict(users[0])
     user["created_at"] = created_at
@@ -480,7 +496,7 @@ def channel_detail(channel_id):
     
     # Query database for messages
     messages = cursor.execute("""
-        SELECT users.name, users.profile_url, messages.message, messages.created_at FROM messages
+        SELECT users.name, users.profile_url, messages.message, messages.created_at, messages.is_start_date FROM messages
         JOIN users ON messages.user_id = users.id
         WHERE channel_id = ?
         ORDER BY messages.created_at ASC
@@ -493,8 +509,10 @@ def channel_detail(channel_id):
     messages = [dict(message) for message in messages]
     
     for message in messages:
-        message["created_at"] = datetime.strptime(message["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
-        message["created_at"] = message["created_at"].astimezone(pytz.timezone('Asia/Jakarta')).strftime("%Y-%m-%d %H:%M:%S")
+        if message["is_start_date"]:
+            message["start_date_at"] = datetime.fromisoformat(message["created_at"]).strftime("%B %d, %Y")
+            
+        message["created_at"] = format_message_date(message["created_at"])
 
     # Remember which channel has been selected  
     session["channel_id"] = channel_id
