@@ -41,3 +41,5 @@ CREATE TABLE messages (
     FOREIGN KEY (channel_id) REFERENCES channels(id)
 );
 
+-- Insert the default channel
+INSERT INTO channels (name, admin_id, description) VALUES ('General', 1, "The default channel for all users.");
