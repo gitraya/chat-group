@@ -66,6 +66,10 @@ def reset_room():
 @socketio.on('new_message')
 def new_message(message):
     print('received message: ' + str(message))
+    
+    if message == "":
+        return
+    
     # Get database connection
     db = get_db()
     cursor = db.cursor()
@@ -131,12 +135,15 @@ def index():
     users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
     
     # Query database for messages
-    messages = cursor.execute("""
-        SELECT users.name, users.profile_url, messages.message, messages.created_at, messages.is_start_date FROM messages
-        JOIN users ON messages.user_id = users.id
-        WHERE channel_id = ?
-        ORDER BY messages.created_at ASC
-    """, (session["channel_id"],)).fetchall()
+    messages = []
+    
+    if "channel_id" in session:
+        messages = cursor.execute("""
+            SELECT users.name, users.profile_url, messages.message, messages.created_at, messages.is_start_date FROM messages
+            JOIN users ON messages.user_id = users.id
+            WHERE channel_id = ?
+            ORDER BY messages.created_at ASC
+        """, (session["channel_id"],)).fetchall()
     
     channels = [dict(row) for row in rows]
 
