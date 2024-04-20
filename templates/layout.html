@@ -107,6 +107,10 @@
       ` + memberList.innerHTML;
       });
 
+      function goBack() {
+        window.history.back();
+      }
+
       function resetRoom() {
         socket.emit("reset_room");
       }
