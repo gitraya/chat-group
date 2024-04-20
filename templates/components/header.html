@@ -1,9 +1,18 @@
 <div
-  class="flex py-4 pl-7 pr-8 justify-between items-center border-b border-b-2 border-slate-900"
-  style="height: 70px"
+  class="flex py-4 px-4 sm:pl-7 sm:pr-8 lg:px-16 items-center border-b border-b-2 border-slate-900 gap-7"
+  style="height: 68px"
 >
+  <button
+    type="button"
+    data-drawer-target="drawer-menu"
+    data-drawer-show="drawer-menu"
+    aria-controls="drawer-menu"
+    class="text-white md:hidden"
+  >
+    <i class="fa-solid fa-bars fa-xl"></i>
+  </button>
   {% if channel %}
-  <h2 class="text-lg font-semibold text-white">
+  <h2 class="text-lg font-semibold text-white uppercase">
     <a href="/channel/{{ channel.id }}">{{ channel.name }}</a>
   </h2>
   {% endif %}

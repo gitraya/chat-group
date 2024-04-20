@@ -1,0 +1,88 @@
+<div class="flex py-4 pl-7 pr-8 justify-between items-center bg-slate-800">
+  <a href="/" class="flex gap-4 items-center"
+    ><i class="fa-solid fa-chevron-left"></i>
+    <h1 class="text-lg">All Channels</h1></a
+  >
+</div>
+<div class="flex flex-col overflow-hidden h-full">
+  <h2 class="text-lg font-semibold pl-7 pr-8 pt-6 pb-4 uppercase">
+    {{ channel.name }}
+  </h2>
+  <p class="text-lg pl-7 pr-8 break-all mb-10">{{ channel.description }}</p>
+
+  <h2 class="pl-7 pr-8 mb-2 font-semibold">MEMBERS</h2>
+  <ul
+    id="member-list"
+    class="flex flex-col pl-7 pr-8 gap-5 py-4 overflow-y-auto"
+  >
+    {% for member in channel.members %}
+    <li class="flex items-center text-slate-200">
+      {% if member.profile_url %}
+      <img
+        src="{{ member.profile_url }}"
+        alt="Profile Picture"
+        class="w-9 h-9 rounded"
+      />
+      {% else %}
+      <div
+        class="w-9 h-9 bg-slate-300 rounded flex items-center justify-center"
+      >
+        <i class="fa-solid fa-user"></i>
+      </div>
+      {% endif %}
+      <span class="ml-3 font-semibold text-lg">{{ member.name }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+<div class="mt-auto bg-slate-800 py-4 pl-7 pr-8">
+  <button
+    id="dropdownDefaultButton"
+    data-dropdown-toggle="dropdown"
+    type="button"
+    class="w-full flex justify-between items-center"
+  >
+    <div class="flex gap-5 items-center">
+      {% if user.profile_url %}
+      <img
+        src="{{ user.profile_url }}"
+        alt="Profile Picture"
+        class="w-6 rounded-full"
+      />
+      {% else %}
+      <div
+        class="w-6 h-6 bg-slate-300 rounded-full flex items-center justify-center"
+      >
+        <i class="fa-solid fa-user fa-xs"></i>
+      </div>
+      {% endif %}
+      <span class="font-medium text-lg text-slate-200">{{ user.name }}</span>
+    </div>
+    <i class="fa-solid fa-chevron-down"></i>
+  </button>
+  <div
+    id="dropdown"
+    class="z-10 hidden divide-y divide-gray-100 rounded-lg shadow w-44 bg-slate-700"
+  >
+    <ul
+      class="p-2.5 text-sm text-gray-200"
+      aria-labelledby="dropdownDefaultButton"
+    >
+      <li>
+        <a
+          href="/profile"
+          class="flex items-center gap-2 rounded-lg pl-3.5 pr-4 py-2 hover:bg-slate-600 hover:text-white"
+          ><i class="fa-solid fa-circle-user"></i><span>Profile</span></a
+        >
+      </li>
+      <li>
+        <a
+          href="/logout"
+          class="flex items-center gap-2 rounded-lg px-4 py-2 text-red-600 hover:bg-slate-600"
+          ><i class="fa-solid fa-arrow-right-from-bracket"></i
+          ><span>Logout</span></a
+        >
+      </li>
+    </ul>
+  </div>
+</div>

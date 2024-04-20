@@ -17,8 +17,10 @@
 
     <title>Chat Group: {% block title %}{% endblock %}</title>
   </head>
-  <body class="flex h-screen">
-    {% block main %}{% endblock %}
+  <body class="flex justify-center bg-slate-950">
+    <div class="flex w-full h-screen max-w-screen-2xl">
+      {% block main %}{% endblock %}
+    </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
     <script

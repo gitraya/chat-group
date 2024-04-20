@@ -1,39 +1,17 @@
 {% extends "layout.html" %} {% block title %} Home {% endblock %} {% block main
 %}
 <nav
-  class="w-full flex flex-col max-w-80 h-full bg-slate-950 text-white max-h-screen"
+  id="drawer-menu"
+  tabindex="-1"
+  aria-labelledby="drawer-menu"
+  class="fixed md:hidden top-0 left-0 z-40 overflow-y-auto transition-transform -translate-x-full w-80 h-screen flex flex-col bg-slate-950 text-white"
 >
-  <div class="flex py-4 pl-7 pr-8 justify-between items-center bg-slate-800">
-    <a href="/"><h1 class="text-lg">Channels</h1></a>
-    <button
-      data-modal-target="modal-create-channel"
-      data-modal-toggle="modal-create-channel"
-      class="px-2 py-0.5 rounded bg-slate-700"
-      type="button"
-    >
-      <i class="fa-regular fa-plus"></i>
-    </button>
-
-    {% include "components/modal-channel.html" %}
-  </div>
-  <div class="flex flex-col overflow-hidden">
-    <div class="relative ml-7 mr-8 mt-6 mb-4">
-      <input
-        type="text"
-        placeholder="Search"
-        class="bg-slate-600 w-full p-3 pl-10 font-medium text-sm rounded-md"
-        oninput="searchChannels(event)"
-      />
-      <i class="absolute left-3 top-3.5 fa-solid fa-magnifying-glass"></i>
-    </div>
-    <ul
-      id="channel-list"
-      class="flex flex-col pl-6 pr-7 gap-3 py-3 overflow-y-auto"
-    >
-      {% include "components/channel.html" %}
-    </ul>
-  </div>
-  {% include "components/profile.html" %}
+  {% include "components/navigation/drawer-home.html" %}
+</nav>
+<nav
+  class="hidden md:flex w-full h-full flex-col max-w-80 bg-slate-950 text-white max-h-screen"
+>
+  {% include "components/navigation/base-home.html" %}
 </nav>
 
 <div class="w-full bg-slate-700 flex flex-col">

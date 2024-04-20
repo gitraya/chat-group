@@ -1,46 +1,17 @@
 {% extends "layout.html" %} {% block title %} Home {% endblock %} {% block main
 %}
 <nav
-  class="w-full flex flex-col max-w-80 h-full bg-slate-950 text-white max-h-screen"
+  id="drawer-menu"
+  tabindex="-1"
+  aria-labelledby="drawer-menu"
+  class="fixed md:hidden top-0 left-0 z-40 overflow-y-auto transition-transform -translate-x-full w-80 h-screen flex flex-col bg-slate-950 text-white"
 >
-  <div class="flex py-4 pl-7 pr-8 justify-between items-center bg-slate-800">
-    <a href="/" class="flex gap-4 items-center"
-      ><i class="fa-solid fa-chevron-left"></i>
-      <h1 class="text-lg">All Channels</h1></a
-    >
-  </div>
-  <div class="flex flex-col overflow-hidden">
-    <h2 class="text-lg font-semibold pl-7 pr-8 pt-6 pb-4">
-      {{ channel.name }}
-    </h2>
-    <p class="text-lg pl-7 pr-8 break-all mb-10">{{ channel.description }}</p>
-
-    <h2 class="pl-7 pr-8 mb-2 font-semibold">MEMBERS</h2>
-    <ul
-      id="member-list"
-      class="flex flex-col pl-7 pr-8 gap-5 py-4 overflow-y-auto"
-    >
-      {% for member in channel.members %}
-      <li class="flex items-center text-slate-200">
-        {% if member.profile_url %}
-        <img
-          src="{{ member.profile_url }}"
-          alt="Profile Picture"
-          class="w-9 h-9 rounded"
-        />
-        {% else %}
-        <div
-          class="w-9 h-9 bg-slate-300 rounded flex items-center justify-center"
-        >
-          <i class="fa-solid fa-user"></i>
-        </div>
-        {% endif %}
-        <span class="ml-3 font-semibold text-lg">{{ member.name }}</span>
-      </li>
-      {% endfor %}
-    </ul>
-  </div>
-  {% include "components/profile.html" %}
+  {% include "components/navigation/drawer-channel.html" %}
+</nav>
+<nav
+  class="hidden md:flex w-full h-full flex-col max-w-80 bg-slate-950 text-white max-h-screen"
+>
+  {% include "components/navigation/base-channel.html" %}
 </nav>
 
 <div class="w-full bg-slate-700 flex flex-col">
