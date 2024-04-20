@@ -1,4 +1,5 @@
 flask_session
-__pycache__
 chat_group.db
 .env
+venv/
+*.pyc
