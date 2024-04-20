@@ -46,6 +46,7 @@ def login_required(f):
 
     return decorated_function
 
+
 def validate_password(password):
     # Check if password meets minimum length requirement
     if len(password) < 8:
@@ -61,14 +62,11 @@ def validate_password(password):
 
     return True, "Password is valid"
 
-class MyObject:
-    def __init__(self, **kwargs):
-        for key, value in kwargs.items():
-            setattr(self, key, value)
 
 def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def make_initial(name):
     # Split the name into words
@@ -78,6 +76,7 @@ def make_initial(name):
         return words[0][0].upper() + words[1][0].upper()
     else:
         return words[0][0].upper() + words[0][1].upper()
+
 
 def format_message_date(iso_date):
     dt_object = datetime.fromisoformat(iso_date)
