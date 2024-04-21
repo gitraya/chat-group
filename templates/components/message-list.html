@@ -16,7 +16,7 @@
     <img
       src="{{ message.profile_url }}"
       alt="Profile Picture"
-      class="w-9 h-9 rounded-lg shrink-0"
+      class="w-9 h-9 rounded-lg shrink-0 object-cover"
     />
     {% else %}
     <div
@@ -32,7 +32,7 @@
         >
         <span class="text-slate-400 text-sm">{{ message.created_at }}</span>
       </div>
-      <p class="text-lg text-gray-100 break-all">{{ message.message }}</p>
+      <p class="text-lg text-gray-100 break-words">{{ message.message }}</p>
     </div>
   </li>
   {% endfor %} {% else %}

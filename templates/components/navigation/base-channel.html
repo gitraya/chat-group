@@ -8,7 +8,7 @@
   <h2 class="text-lg font-semibold pl-7 pr-8 pt-6 pb-4 uppercase">
     {{ channel.name }}
   </h2>
-  <p class="text-lg pl-7 pr-8 break-all mb-10">{{ channel.description }}</p>
+  <p class="text-lg pl-7 pr-8 break-words mb-10">{{ channel.description }}</p>
 
   <h2 class="pl-7 pr-8 mb-2 font-semibold">MEMBERS</h2>
   <ul
@@ -21,7 +21,7 @@
       <img
         src="{{ member.profile_url }}"
         alt="Profile Picture"
-        class="w-9 h-9 rounded"
+        class="w-9 h-9 rounded object-cover shrink-0"
       />
       {% else %}
       <div
@@ -47,11 +47,11 @@
       <img
         src="{{ user.profile_url }}"
         alt="Profile Picture"
-        class="w-6 rounded-full"
+        class="w-8 h-8 rounded-lg object-cover shrink-0"
       />
       {% else %}
       <div
-        class="w-6 h-6 bg-slate-300 rounded-full flex items-center justify-center"
+        class="w-8 h-8 bg-slate-300 rounded-lg flex items-center justify-center"
       >
         <i class="fa-solid fa-user fa-xs"></i>
       </div>

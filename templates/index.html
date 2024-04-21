@@ -22,13 +22,14 @@
 {% endblock %} {% block scripts %}
 <script>
   function searchChannels(event) {
-    console.log(event.target.value);
     const query = event.target.value.toLowerCase();
 
     fetch(`/channel/search?name=${query}`)
       .then((response) => response.text())
       .then((html) => {
-        document.querySelector("#channel-list").innerHTML = html;
+        document.querySelectorAll(".channel-list").forEach((list) => {
+          list.innerHTML = html;
+        });
       });
   }
 </script>

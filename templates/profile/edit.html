@@ -12,7 +12,7 @@ main %}
     </h1>
     <form
       action="/profile/edit"
-      method="PUT"
+      method="POST"
       class="mt-4 mb-2"
       enctype="multipart/form-data"
     >
@@ -24,7 +24,7 @@ main %}
         <img
           src="{{ user.profile_url }}"
           alt="Profile Picture"
-          class="w-24 h-24 rounded-full mb-2"
+          class="w-24 h-24 rounded-full mb-2 object-cover"
         />
         {% endif %}
         <input
