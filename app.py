@@ -7,7 +7,7 @@ import cloudinary.api
 import json
 import uuid
 from dotenv import load_dotenv
-from flask import Flask, flash, redirect, render_template, request, session, g, jsonify
+from flask import Flask, flash, redirect, render_template, request, session, g
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from email_validator import validate_email, EmailNotValidError
@@ -20,8 +20,10 @@ load_dotenv()
 
 # Configure application
 app = Flask(__name__)
-app.config['DATABASE'] = os.getenv("DATABASE")
-app.config['TIMEZONE'] = os.getenv("TIMEZONE")
+socketio = SocketIO(app)
+
+app.config["DATABASE"] = os.getenv("DATABASE")
+app.config["TIMEZONE"] = os.getenv("TIMEZONE")
 
 # Configure session to use filesystem (instead of signed cookies)
 app.config["SESSION_PERMANENT"] = False
@@ -30,11 +32,12 @@ Session(app)
 
 # Configure SQLite database
 def get_db():
-    db = getattr(g, '_database', None)
+    db = getattr(g, "_database", None)
     if db is None:
-        db = g._database = sqlite3.connect(app.config['DATABASE'])
+        db = g._database = sqlite3.connect(app.config["DATABASE"])
     return db
 
+# Set up Cloudinary
 cloudinary.config( 
   cloud_name = os.getenv("CLOUDINARY_CLOUD_NAME"), 
   api_key = os.getenv("CLOUDINARY_API_KEY"), 
@@ -42,30 +45,29 @@ cloudinary.config(
   secure = True
 )
 
-socketio = SocketIO(app)
 
 client_rooms = {}
 
-@socketio.on('reset_room')
+@socketio.on("reset_room")
 def reset_room():
+    """Refresh client rooms"""
+    
     id = session.get("id")
     channel_id = session.get("channel_id")
 
     # Leave current room
     if id and id in client_rooms:
         leave_room(client_rooms[id])
-        print(f"User {id} left room {client_rooms[id]}")
 
     # Join new room
     if id and channel_id:
         join_room(channel_id)
         client_rooms[id] = channel_id
-        print(f"User {id} joined room {channel_id}")
 
 
-@socketio.on('new_message')
-def new_message(message):
-    print('received message: ' + str(message))
+@socketio.on("new_message")
+def new_message(message):  
+    """Broadcast new message to all clients in the channel"""  
     
     if message == "":
         return
@@ -81,7 +83,7 @@ def new_message(message):
     # Query latest message
     messages = cursor.execute("SELECT created_at FROM messages WHERE channel_id = ? ORDER BY created_at DESC LIMIT 1", (session["channel_id"],)).fetchall()
     
-    # Check if the message is the start date
+    # Check if the message is the first message of the day
     is_start_date = False
     if len(messages) == 0:
         is_start_date = True
@@ -102,17 +104,18 @@ def new_message(message):
     if is_start_date:
         data["start_date_at"] = datetime.now().strftime("%B %d, %Y")
 
-    emit('new_message', json.dumps(data), include_self=True, to=session["channel_id"])
+    emit("new_message", json.dumps(data), include_self=True, to=session["channel_id"])
+
 
 @app.teardown_appcontext
 def close_connection(exception):
-    db = getattr(g, '_database', None)
+    db = getattr(g, "_database", None)
     if db is not None:
         db.close()
 
 @app.after_request
 def after_request(response):
-    """Ensure responses aren't cached"""
+    """Ensure responses aren"t cached"""
     response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     response.headers["Expires"] = 0
     response.headers["Pragma"] = "no-cache"
@@ -152,12 +155,14 @@ def index():
         
     messages = [dict(message) for message in messages]
     
+    # Convert iso date to human readable date
     for message in messages:
         if message["is_start_date"]:
             message["start_date_at"] = datetime.fromisoformat(message["created_at"]).strftime("%B %d, %Y")
             
         message["created_at"] = format_message_date(message["created_at"])
-        
+    
+    # Get current active channel
     active_channel = None
     
     if "channel_id" in session:
@@ -188,14 +193,14 @@ def register():
             return apology("must provide password", 400)
         
         # Ensure email is valid
-        elif email:
+        if email:
             try:
                 validate_email(email)
             except EmailNotValidError as e:
                 return apology(str(e), 400)
 
         # Ensure confirmation match with the password
-        elif not request.form.get("confirm_password") or password != request.form.get("confirm_password"):
+        if not request.form.get("confirm_password") or password != request.form.get("confirm_password"):
             return apology("passwords don't match", 400)
 
         isvalid, message = validate_password(password)
@@ -210,7 +215,7 @@ def register():
         # Query database for username
         rows = cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email)).fetchall()
         
-        # Ensure username doesn't exists
+        # Ensure username doesn"t exists
         if (len(rows) > 0):
             return apology("username or email already exists", 400)
 
@@ -223,7 +228,7 @@ def register():
         session["user_id"] = user_id
 
         # Redirect user to home page
-        flash("Registered!")
+        flash("You are registered!")
         return redirect("/channel/1")
 
     return render_template("register.html")
@@ -293,7 +298,7 @@ def profile():
 
     # Convert UTC time to environment timezone
     created_at = datetime.strptime(users[0]["created_at"], "%Y-%m-%d %H:%M:%S").replace(tzinfo=pytz.utc)
-    created_at = created_at.astimezone(pytz.timezone(app.config['TIMEZONE'])).strftime("%Y-%m-%d %H:%M:%S")
+    created_at = created_at.astimezone(pytz.timezone(app.config["TIMEZONE"])).strftime("%Y-%m-%d %H:%M:%S")
     
     user = dict(users[0])
     user["created_at"] = created_at
@@ -301,7 +306,7 @@ def profile():
     return render_template("profile/index.html", user=user)
 
 
-@app.route("/profile/edit", methods=["GET", "PUT"])
+@app.route("/profile/edit", methods=["GET", "POST"])
 @login_required
 def edit_profile():
     """Edit user profile"""
@@ -313,7 +318,7 @@ def edit_profile():
     
     users = cursor.execute("SELECT * FROM users WHERE id = ?", (session["user_id"],)).fetchall()
      
-    if request.method == "PUT":
+    if request.method == "POST":
         username = request.form.get("username")
         email = request.form.get("email")
         name = request.form.get("name")
@@ -339,7 +344,7 @@ def edit_profile():
         # Query database for username
         rows = cursor.execute("SELECT id FROM users WHERE username = ? OR email = ?", (username, email)).fetchall()
 
-        # Ensure username doesn't exists
+        # Ensure username doesn"t exists
         if len(rows) > 0 and rows[0]["id"] != session["user_id"]:
             return apology("username or email already exists", 400)
         
@@ -348,18 +353,19 @@ def edit_profile():
         if "profile_url" in request.files:
             profile_picture = request.files["profile_url"]
             
-            if profile_picture.filename == "":
-                return apology("no file selected", 400)
-            
-            if not allowed_file(profile_picture.filename):
-                return apology("file type not allowed", 400)
-            
-            # Upload profile picture to Cloudinary
-            profile_url = cloudinary.uploader.upload(profile_picture,
-                folder="chat-group",
-                public_id=session["user_id"],
-                overwrite=True,
-            )["url"]
+            if profile_picture:
+                if profile_picture.filename == "":
+                    return apology("no file selected", 400)
+                
+                if not allowed_file(profile_picture.filename):
+                    return apology("file type not allowed", 400)
+                
+                # Upload profile picture to Cloudinary
+                profile_url = cloudinary.uploader.upload(profile_picture,
+                    folder="chat-group",
+                    public_id=session["user_id"],
+                    overwrite=True,
+                )["url"]
         
         # Ensure password match
         if not check_password_hash(users[0]["hash"], password):
@@ -376,18 +382,18 @@ def edit_profile():
         user["profile_url"] = profile_url
         
         # Redirect user to home page
-        flash("Profile updated!")
+        flash("Your profile has been updated!")
         return render_template("profile/index.html", user=user)
 
     return render_template("profile/edit.html", user=users[0])
 
 
-@app.route("/password", methods=["GET", "PUT"])
+@app.route("/password", methods=["GET", "POST"])
 @login_required
 def password():
     """Change User Password"""
 
-    if request.method == "PUT":
+    if request.method == "POST":
         old = request.form.get("old")
         password = request.form.get("password")
         confirmation = request.form.get("confirm_password")
@@ -460,7 +466,7 @@ def create_channel():
     db.commit()
     
     # Redirect user to home page
-    flash("Channel Created!")
+    flash(name + " channel created!")
     return redirect("/channel/" + str(channel_id))
 
 
@@ -499,7 +505,7 @@ def channel_detail(channel_id):
     
     # Send new member data to connected clients
     if is_new_member:
-        emit('new_member', json.dumps(dict(members[0])), include_self=True, to=channel_id, namespace='/')
+        emit("new_member", json.dumps(dict(members[0])), include_self=True, to=channel_id, namespace="/")
     
     # Query database for messages
     messages = cursor.execute("""
@@ -513,8 +519,13 @@ def channel_detail(channel_id):
     channel["members"] = [dict(member) for member in members]
     user = dict(users[0])
     
+    # Truncate description if it's too long
+    if len(channel["description"]) > 100:
+        channel["description"] = channel["description"][:100] + "..."
+    
     messages = [dict(message) for message in messages]
     
+    # Convert iso date to human readable date
     for message in messages:
         if message["is_start_date"]:
             message["start_date_at"] = datetime.fromisoformat(message["created_at"]).strftime("%B %d, %Y")
@@ -540,7 +551,7 @@ def search_channel():
     cursor.row_factory = sqlite3.Row
     
     # Query database for channels
-    rows = cursor.execute("SELECT * FROM channels WHERE name LIKE ? ORDER BY created_at DESC", ('%' + name + '%',)).fetchall()
+    rows = cursor.execute("SELECT * FROM channels WHERE name LIKE ? ORDER BY created_at DESC", ("%" + name + "%",)).fetchall()
     
     channels = [dict(row) for row in rows]
     
