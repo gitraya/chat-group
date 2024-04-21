@@ -7,7 +7,7 @@ import cloudinary.api
 import json
 import uuid
 from dotenv import load_dotenv
-from flask import Flask, flash, redirect, render_template, request, session, g
+from flask import Flask, flash, redirect, render_template, request, session, g, jsonify
 from flask_session import Session
 from werkzeug.security import check_password_hash, generate_password_hash
 from email_validator import validate_email, EmailNotValidError
@@ -105,7 +105,7 @@ def new_message(message):
         data["start_date_at"] = datetime.now().strftime("%B %d, %Y")
 
     emit("new_message", json.dumps(data), include_self=True, to=session["channel_id"])
-
+    
 
 @app.teardown_appcontext
 def close_connection(exception):
@@ -145,7 +145,8 @@ def index():
             SELECT users.name, users.profile_url, messages.message, messages.created_at, messages.is_start_date FROM messages
             JOIN users ON messages.user_id = users.id
             WHERE channel_id = ?
-            ORDER BY messages.created_at ASC
+            ORDER BY messages.created_at DESC
+            LIMIT 20
         """, (session["channel_id"],)).fetchall()
     
     channels = [dict(row) for row in rows]
@@ -161,6 +162,9 @@ def index():
             message["start_date_at"] = datetime.fromisoformat(message["created_at"]).strftime("%B %d, %Y")
             
         message["created_at"] = format_message_date(message["created_at"])
+    
+    if len(messages) > 0:
+        messages = list(reversed(messages))
     
     # Get current active channel
     active_channel = None
@@ -512,7 +516,8 @@ def channel_detail(channel_id):
         SELECT users.name, users.profile_url, messages.message, messages.created_at, messages.is_start_date FROM messages
         JOIN users ON messages.user_id = users.id
         WHERE channel_id = ?
-        ORDER BY messages.created_at ASC
+        ORDER BY messages.created_at DESC
+        LIMIT 20
     """, (channel_id,)).fetchall()
     
     channel = dict(channels[0])
@@ -535,7 +540,10 @@ def channel_detail(channel_id):
     # Remember which channel has been selected  
     session["channel_id"] = channel_id
     
-    return render_template("channel.html", channel=channel, user=user, messages=messages)
+    if len(messages) > 0:
+        messages = list(reversed(messages))
+    
+    return render_template("channel.html", channel=channel, user=user, messages=messages) 
 
 
 @app.route("/channel/search", methods=["GET"])
@@ -559,6 +567,45 @@ def search_channel():
         channel["initial"] = make_initial(channel.get("name"))
     
     return render_template("components/channel.html", channels=channels)
+
+@app.route("/messages", methods=["GET"])
+@login_required
+def load_messages():
+    """Load more messages"""
+    
+    page = int(request.args.get("page")) or 1
+    pageSize = int(request.args.get("pageSize")) or 10
+    
+    if pageSize > 50:
+        pageSize = 50
+    
+    # Get database connection
+    db = get_db()
+    cursor = db.cursor()
+    cursor.row_factory = sqlite3.Row
+    
+    if "channel_id" not in session:
+        return jsonify({"error": "channel not found"})
+    
+    # Query database for messages
+    messages = cursor.execute("""
+        SELECT users.name, users.profile_url, messages.message, messages.created_at, messages.is_start_date FROM messages
+        JOIN users ON messages.user_id = users.id
+        WHERE channel_id = ?
+        ORDER BY messages.created_at DESC
+        LIMIT ? OFFSET ?
+    """, (session["channel_id"], pageSize, (page - 1) * pageSize)).fetchall()
+    
+    messages = [dict(message) for message in messages]
+    
+    # Convert iso date to human readable date
+    for message in messages:
+        if message["is_start_date"]:
+            message["start_date_at"] = datetime.fromisoformat(message["created_at"]).strftime("%B %d, %Y")
+            
+        message["created_at"] = format_message_date(message["created_at"])
+        
+    return jsonify({ "page": page, "page_size": pageSize, "items": messages })
 
 
 if __name__ == "__main__":
