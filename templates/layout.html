@@ -158,6 +158,7 @@
         const buttons = document.querySelectorAll('button[type="submit"]');
         buttons.forEach((button) => {
           button.addEventListener("click", () => {
+            if (button.classList.contains("no-loading")) return;
             button.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i>`;
           });
         });
