@@ -82,17 +82,17 @@
 
         if (isNew) {
           if (message.start_date_at) {
-            container.appendChild(newDivider);
+            container.insertBefore(newDivider, container.firstChild);
           }
 
-          container.appendChild(newMessage);
+          container.insertBefore(newMessage, container.firstChild);
         }
 
         if (!isNew) {
-          container.insertBefore(newMessage, container.firstChild);
+          container.appendChild(newMessage);
 
           if (message.start_date_at) {
-            container.insertBefore(newDivider, container.firstChild);
+            container.appendChild(newDivider);
           }
         }
       };
@@ -111,7 +111,7 @@
 
       socket.on("new_member", function (json) {
         const member = JSON.parse(json);
-        const memberList = document.querySelector("#member-list");
+        const memberList = document.querySelectorAll(".member-list");
         const newLi = document.createElement("li");
         newLi.className = "flex items-center text-slate-200";
         newLi.innerHTML = `${
@@ -119,7 +119,10 @@
             ? ` <img src="${member.profile_url}" alt="Profile Picture" class="w-9 h-9 rounded object-cover shrink-0">`
             : `<div class="w-9 h-9 bg-slate-300 rounded flex items-center justify-center"><i class="fa-solid fa-user"></i></div>`
         }<span class="ml-3 font-semibold text-lg">${member.name}</span>`;
-        memberList.insertBefore(newLi, memberList.firstChild);
+
+        memberList.forEach((list) => {
+          list.insertBefore(newLi, list.firstChild);
+        });
       });
 
       function goBack() {
@@ -138,13 +141,6 @@
 
         socket.emit("new_message", message);
         form.reset();
-      }
-
-      function scrollToBottom() {
-        const chatMessages = document.getElementById("message-list");
-        if (!chatMessages) return;
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        chatMessages.classList.remove("invisible");
       }
 
       function autoRemoveToast() {
@@ -172,7 +168,13 @@
         if (!chatMessages) return;
 
         chatMessages.addEventListener("scroll", () => {
-          if (chatMessages.scrollTop === 0) {
+          if (
+            Math.abs(
+              chatMessages.scrollHeight -
+                Math.abs(chatMessages.scrollTop) -
+                chatMessages.clientHeight
+            ) < 1
+          ) {
             if (isEndOfMessages || isOnLoadMessages) return;
 
             page += 1;
@@ -183,7 +185,7 @@
             loadingLi.className =
               "loading-indicator flex justify-center items-center";
             loadingLi.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i>`;
-            chatMessages.insertBefore(loadingLi, chatMessages.firstChild);
+            chatMessages.appendChild(loadingLi);
 
             // Fetch more messages
             fetch(`/messages?page=${page}&pageSize=${pageSize}`)
@@ -214,8 +216,6 @@
                   addNewMessage(message, chatMessages, false);
                 });
 
-                chatMessages.scrollTop = 100;
-
                 isOnLoadMessages = false;
               });
           }
@@ -224,7 +224,6 @@
 
       window.onload = function () {
         resetRoom();
-        scrollToBottom();
         autoRemoveToast();
         animateSubmitButton();
         listenMoreMessages();

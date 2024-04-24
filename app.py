@@ -163,9 +163,6 @@ def index():
             
         message["created_at"] = format_message_date(message["created_at"])
     
-    if len(messages) > 0:
-        messages = list(reversed(messages))
-    
     # Get current active channel
     active_channel = None
     
@@ -539,9 +536,6 @@ def channel_detail(channel_id):
 
     # Remember which channel has been selected  
     session["channel_id"] = channel_id
-    
-    if len(messages) > 0:
-        messages = list(reversed(messages))
     
     return render_template("channel.html", channel=channel, user=user, messages=messages) 
 

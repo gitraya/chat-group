@@ -11,10 +11,7 @@
   <p class="text-lg pl-7 pr-8 break-words mb-10">{{ channel.description }}</p>
 
   <h2 class="pl-7 pr-8 mb-2 font-semibold">MEMBERS</h2>
-  <ul
-    id="member-list"
-    class="flex flex-col pl-7 pr-8 gap-5 py-4 overflow-y-auto"
-  >
+  <ul class="member-list flex flex-col pl-7 pr-8 gap-5 py-4 overflow-y-auto">
     {% for member in channel.members %}
     <li class="flex items-center text-slate-200">
       {% if member.profile_url %}
