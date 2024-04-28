@@ -54,6 +54,9 @@ def reset_room():
     
     id = session.get("id")
     channel_id = session.get("channel_id")
+    
+    if not id or not channel_id:
+        return
 
     # Leave current room
     if id and id in client_rooms:
@@ -69,7 +72,7 @@ def reset_room():
 def new_message(message):  
     """Broadcast new message to all clients in the channel"""  
     
-    if message == "":
+    if message == "" or "channel_id" not in session or "user_id" not in session:
         return
     
     # Get database connection

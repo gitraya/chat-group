@@ -35,7 +35,7 @@
     </p>
     <hr class="w-full border border-slate-500" />
   </li>
-  {% endif %} {% endfor %} {% else %}
+  {% endif %} {% endfor %} {% elif messages == [] and channel %}
   <li id="empty-messages" class="flex justify-center items-center h-full">
     <p class="text-lg text-slate-300">No messages yet</p>
   </li>
