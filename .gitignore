@@ -3,3 +3,4 @@ chat_group.db
 .env
 venv/
 *.pyc
+node_modules/
