@@ -230,6 +230,7 @@ def register():
         
         # Remember which user are already registered
         session["user_id"] = user_id
+        session["id"] = uuid.uuid4()
 
         # Redirect user to home page
         flash("You are registered!")
