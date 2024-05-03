@@ -88,7 +88,7 @@ Chat Group is a web application that allows users to create channels and chat wi
 
 6. Create the database:
    ```bash
-   sqlite3 chat.db < init.sql
+   sqlite3 chat_group.db < init.sql
    ```
 7. Run the application:
    ```bash
