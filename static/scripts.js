@@ -46,7 +46,7 @@ const addNewMessage = (message, container, isNew = true) => {
         ${
           message.profile_url
             ? `<img src="${message.profile_url}" alt="Profile Picture" class="w-9 h-9 rounded-lg shrink-0 object-cover">`
-            : `<div class="w-9 h-9 bg-slate-300 rounded-lg flex items-center justify-center shrink-0"><i class="fa-solid fa-user"></i></div>`
+            : `<div class="w-9 h-9 bg-slate-300 rounded-lg flex items-center justify-center shrink-0"><i class="fa-solid fa-user" style="color: black"></i></div>`
         }
         <div class="flex flex-col gap-1">
           <div class="flex items-center gap-3">
@@ -96,7 +96,7 @@ socket.on("new_member", function (json) {
   newLi.innerHTML = `${
     member.profile_url
       ? ` <img src="${member.profile_url}" alt="Profile Picture" class="w-9 h-9 rounded object-cover shrink-0">`
-      : `<div class="w-9 h-9 bg-slate-300 rounded flex items-center justify-center"><i class="fa-solid fa-user"></i></div>`
+      : `<div class="w-9 h-9 bg-slate-300 rounded flex items-center justify-center"><i class="fa-solid fa-user" style="color: black"></i></div>`
   }<span class="ml-3 font-semibold text-lg">${member.name}</span>`;
 
   memberList.forEach((list) => {
