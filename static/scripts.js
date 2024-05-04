@@ -137,7 +137,11 @@ function animateSubmitButton() {
   const buttons = document.querySelectorAll('button[type="submit"]');
   buttons.forEach((button) => {
     button.addEventListener("click", () => {
-      if (button.classList.contains("no-loading")) return;
+      const form = button.parentElement;
+      if (button.classList.contains("no-loading") || !form.checkValidity()) {
+        return;
+      }
+
       button.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i>`;
     });
   });

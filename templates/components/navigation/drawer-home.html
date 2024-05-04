@@ -1,5 +1,5 @@
 <div class="flex py-4 pl-7 pr-8 justify-between items-center bg-slate-800">
-  <a href="/"><h1 class="text-lg">Channels</h1></a>
+  <a href="/"><h1 class="text-lg" id="drawer-label">Channels</h1></a>
   <button
     data-modal-target="modal-create-channel-drawer"
     data-modal-toggle="modal-create-channel-drawer"
@@ -47,6 +47,7 @@
         <!-- Modal body -->
         <form class="mt-6 flex flex-col gap-5" action="/channel" method="POST">
           <input
+            required
             type="text"
             id="name"
             name="name"
@@ -54,6 +55,7 @@
             class="bg-slate-600 w-full p-4 font-medium text-sm rounded-md"
           />
           <textarea
+            required
             id="description"
             name="description"
             placeholder="Channel Description"
@@ -62,14 +64,12 @@
           ></textarea>
 
           <!-- Modal footer -->
-          <div class="flex items-center">
-            <button
-              type="submit"
-              class="ml-auto text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-lg px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
-            >
-              Save
-            </button>
-          </div>
+          <button
+            type="submit"
+            class="ml-auto text-white bg-blue-700 hover:bg-blue-800 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-lg text-lg px-5 py-2.5 text-center dark:bg-blue-600 dark:hover:bg-blue-700 dark:focus:ring-blue-800"
+          >
+            Save
+          </button>
         </form>
       </div>
     </div>
