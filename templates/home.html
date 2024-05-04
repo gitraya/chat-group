@@ -6,12 +6,12 @@
   aria-labelledby="drawer-menu"
   class="fixed md:hidden top-0 left-0 z-40 overflow-y-auto transition-transform -translate-x-full w-80 h-screen flex flex-col bg-slate-950 text-white"
 >
-  {% include "components/navigation/drawer-channel.html" %}
+  {% include "components/navigation/drawer-home.html" %}
 </nav>
 <nav
   class="hidden md:flex w-full h-full flex-col max-w-80 bg-slate-950 text-white max-h-screen"
 >
-  {% include "components/navigation/base-channel.html" %}
+  {% include "components/navigation/base-home.html" %}
 </nav>
 
 <div class="w-full bg-slate-700 flex flex-col">
@@ -19,4 +19,18 @@
   "components/message-list.html" %} {% include "components/message-input.html"
   %}
 </div>
+{% endblock %} {% block scripts %}
+<script>
+  function searchChannels(event) {
+    const query = event.target.value.toLowerCase();
+
+    fetch(`/channel/search?name=${query}`)
+      .then((response) => response.text())
+      .then((html) => {
+        document.querySelectorAll(".channel-list").forEach((list) => {
+          list.innerHTML = html;
+        });
+      });
+  }
+</script>
 {% endblock %} ```

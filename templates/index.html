@@ -1,36 +1,43 @@
-{% extends "layout.html" %} {% block title %} Home {% endblock %} {% block main
-%}
-<nav
-  id="drawer-menu"
-  tabindex="-1"
-  aria-labelledby="drawer-menu"
-  class="fixed md:hidden top-0 left-0 z-40 overflow-y-auto transition-transform -translate-x-full w-80 h-screen flex flex-col bg-slate-950 text-white"
->
-  {% include "components/navigation/drawer-home.html" %}
-</nav>
-<nav
-  class="hidden md:flex w-full h-full flex-col max-w-80 bg-slate-950 text-white max-h-screen"
->
-  {% include "components/navigation/base-home.html" %}
-</nav>
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Chat Group: {% block title %}{% endblock %}</title>
+    <link href="/static/favicon.ico" rel="icon" />
 
-<div class="w-full bg-slate-700 flex flex-col">
-  {% include "components/header.html" %} {% include
-  "components/message-list.html" %} {% include "components/message-input.html"
-  %}
-</div>
-{% endblock %} {% block scripts %}
-<script>
-  function searchChannels(event) {
-    const query = event.target.value.toLowerCase();
+    <link
+      rel="stylesheet"
+      href="{{url_for('static',filename='dist/css/output.css')}}"
+    />
 
-    fetch(`/channel/search?name=${query}`)
-      .then((response) => response.text())
-      .then((html) => {
-        document.querySelectorAll(".channel-list").forEach((list) => {
-          list.innerHTML = html;
-        });
-      });
-  }
-</script>
-{% endblock %} ```
+    <script
+      src="https://kit.fontawesome.com/e80beee525.js"
+      crossorigin="anonymous"
+    ></script>
+  </head>
+  <body class="flex justify-center bg-slate-950">
+    {% if get_flashed_messages() %} {% include 'components/toast.html' %} {%
+    endif %}
+
+    <div class="flex w-full h-screen max-w-screen-2xl">
+      {% block main %}{% endblock %}
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+    <script
+      src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+      integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
+      crossorigin="anonymous"
+    ></script>
+
+    <script
+      type="text/javascript"
+      charset="utf-8"
+      src="{{url_for('static',filename='scripts.js')}}"
+    ></script>
+
+    {% block scripts %}{% endblock %}
+  </body>
+</html>

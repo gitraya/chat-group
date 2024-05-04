@@ -173,7 +173,7 @@ def index():
         active_channel = cursor.execute("SELECT * FROM channels WHERE id = ? LIMIT 1", (session["channel_id"],)).fetchall()
         active_channel = dict(active_channel[0])
     
-    return render_template("index.html", channels=channels, user=users[0], channel=active_channel, messages=messages)
+    return render_template("home.html", channels=channels, user=users[0], channel=active_channel, messages=messages)
 
 
 @app.route("/register", methods=["GET", "POST"])
