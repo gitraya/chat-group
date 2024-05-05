@@ -12,7 +12,7 @@ class TemplateChangeHandler(FileSystemEventHandler):
         if event.src_path.endswith('.html'):
             print("Detected change in HTML template. Reloading server...")
             os.system("pkill -f flask")  # Kill Flask server
-            os.system("python your_flask_app.py &")  # Restart Flask server
+            os.system("python app.py &")  # Restart Flask server
 
 if __name__ == "__main__":
     observer = Observer()
