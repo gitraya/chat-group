@@ -604,5 +604,3 @@ def load_messages():
         message["created_at"] = format_message_date(message["created_at"])
         
     return jsonify({ "page": page, "page_size": pageSize, "items": messages })
-
-
