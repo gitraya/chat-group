@@ -606,5 +606,3 @@ def load_messages():
     return jsonify({ "page": page, "page_size": pageSize, "items": messages })
 
 
-if __name__ == "__main__":
-    socketio.run(app)
