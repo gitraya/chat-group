@@ -2,6 +2,17 @@
 
 #### Video Demo: [https://youtu.be/1Q6J9Q6J9Zo](https://youtu.be/1Q6J9Q6J9Zo)
 
+## Table of Contents:
+
+- [Description](#description)
+- [Feature Details](#feature-details)
+- [Technologies](#technologies)
+- [Getting Started](#getting-started)
+- [Acknowledgements](#acknowledgements)
+- [Screenshots](#screenshots)
+- [Authors](#authors)
+- [License](#license)
+
 ## Description:
 
 Chat Group is a web application that allows users to create channels and chat with other users in real-time. Users can create an account, join channels, and send messages to other users in the channel. Users can also edit their profile, picture, password and see the chat history.
@@ -110,3 +121,11 @@ Chat Group is a web application that allows users to create channels and chat wi
 ![alt text](preview/channel.png)
 ![alt text](preview/profile.png)
 ![alt text](preview/edit-profile.png)
+
+## Authors
+
+- **Raya** - _Initial work_ - [GitRaya](https://github.com/gitraya)
+
+## License
+
+This project is licensed under the [MIT License](LICENSE).
