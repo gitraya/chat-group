@@ -116,11 +116,11 @@ Chat Group is a web application that allows users to create channels and chat wi
 
 ## Screenshots:
 
-![alt text](preview/home.png)
-![alt text](preview/create-channel.png)
-![alt text](preview/channel.png)
-![alt text](preview/profile.png)
-![alt text](preview/edit-profile.png)
+![alt text](preview/home.jpeg)
+![alt text](preview/create-channel.jpeg)
+![alt text](preview/channel.jpeg)
+![alt text](preview/profile.jpeg)
+![alt text](preview/edit-profile.jpeg)
 
 ## Authors
 
