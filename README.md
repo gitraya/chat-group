@@ -92,7 +92,7 @@ Chat Group is a web application that allows users to create channels and chat wi
 5. Set the environment variables:
 
    ```bash
-    copy .env.example .env
+    cp .env.example .env
 
     # Open the .env file and add your Cloudinary credentials
    ```
