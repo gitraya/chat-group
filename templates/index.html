@@ -32,7 +32,7 @@
     <div class="flex w-full h-screen max-w-screen-2xl">
       {% block main %}{% endblock %}
 
-      {% include 'components/navigation/modal-create.html' %}
+      {% include 'components/modal-create.html' %}
     </div>
 
     <script src="{{url_for('static',filename='socketio.js')}}"></script>
