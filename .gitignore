@@ -2,3 +2,5 @@ flask_session
 .env
 venv/
 *.pyc
+*.db
+.DS_Store
