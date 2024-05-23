@@ -1,6 +1,7 @@
 # Chat Group Harvard CS50 Final Project
 
 #### Video Demo: [https://youtu.be/kilGocGKnhs](https://youtu.be/kilGocGKnhs)
+#### Live Demo: [https://chat-group-51zc.onrender.com](https://chat-group-51zc.onrender.com)
 
 ## Table of Contents:
 
