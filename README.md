@@ -104,7 +104,7 @@ Chat Group is a web application that allows users to create channels and chat wi
    ```
 7. Run the application:
    ```bash
-    flask run
+    python app.py
    ```
 8. Open your web browser and go to `http://127.0.0.1:5000/`
 
