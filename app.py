@@ -13,7 +13,6 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from email_validator import validate_email, EmailNotValidError
 from datetime import datetime
 from flask_socketio import SocketIO, emit, join_room, leave_room
-from waitress import serve
 
 from helpers import apology, login_required, validate_password, allowed_file, make_initial, format_message_date
 
@@ -21,7 +20,7 @@ load_dotenv()
 
 # Configure application
 app = Flask(__name__)
-socketio = SocketIO(app)
+socketio = SocketIO(app, async_mode="eventlet")
 
 app.config["DATABASE"] = os.getenv("DATABASE")
 app.config["TIMEZONE"] = os.getenv("TIMEZONE")
@@ -606,6 +605,5 @@ def load_messages():
         
     return jsonify({ "page": page, "page_size": pageSize, "items": messages })
 
-if __name__ == "__main__":
-    serve(socketio.run(app, host="0.0.0.0", port=8080))
-
+if __name__ == '__main__':
+    socketio.run(app)
